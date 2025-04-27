@@ -1,35 +1,66 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { PrismaClient } from '@prisma/client';
 
+const prisma = new PrismaClient();
 const router = Router();
 
-// For demonstration, using an in-memory list (use Prisma in production)
-let users: any[] = [
-  {
-    id: 1,
-    email: 'admin@tanami.com',
-    password: bcrypt.hashSync('password', 10)
-  }
-];
+// Check if the admin user exists when the app starts
+const checkAdminUser = async () => {
+  const admin = await prisma.user.findUnique({
+    where: { email: 'admin@tanami.com' },
+  });
 
+  if (!admin) {
+    const hashedPassword = bcrypt.hashSync('admin', 10); // Password for the admin
+    await prisma.user.create({
+      data: {
+        email: 'admin@tanami.com',
+        password: hashedPassword,
+      },
+    });
+    console.log('Admin user created');
+  }
+};
+
+// Call the function to check for the admin user
+checkAdminUser();
+
+// Register user
 router.post('/register', async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  if (users.find(u => u.email === email)) {
+
+  // Check if user already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email }
+  });
+  if (existingUser) {
     return res.status(400).json({ message: 'User already exists' });
   }
-  const hashed = bcrypt.hashSync(password, 10);
-  const newUser = { id: users.length + 1, email, password: hashed };
-  users.push(newUser);
+
+  // Hash password and create user
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  const newUser = await prisma.user.create({
+    data: { email, password: hashedPassword }
+  });
   res.json({ message: 'User registered' });
 });
 
+// Login user
 router.post('/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  const user = users.find(u => u.email === email);
+  const user = await prisma.user.findUnique({
+    where: { email }
+  });
+
   if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+
+  // Compare password
   const valid = bcrypt.compareSync(password, user.password);
   if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
+
+  // Generate JWT token
   const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET!, { expiresIn: process.env.JWT_EXPIRATION || '1h' });
   res.json({ token });
 });
