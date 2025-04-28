@@ -19,7 +19,14 @@ export default function ActivityFeed() {
     }
     socket = io("http://localhost:4000");
     socket.on("new_activity", (activity: any) => {
-      setActivities((prev) => [activity, ...prev]);
+      setActivities((prev) => {
+        if (
+          !prev.some((existingActivity) => existingActivity.id === activity.id)
+        ) {
+          return [activity, ...prev];
+        }
+        return prev;
+      });
     });
 
     axios
@@ -31,13 +38,18 @@ export default function ActivityFeed() {
     return () => {
       if (socket) socket.disconnect();
     };
-  }, []);
+  }, [token]);
 
   const postActivity = async () => {
+    if (!content) {
+      alert("Please enter content for the activity");
+      return;
+    }
+
     try {
       await axios.post(
         "http://localhost:4000/api/activity",
-        { content },
+        { action: "manual_post", content },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -76,21 +88,27 @@ export default function ActivityFeed() {
         />
         <button
           onClick={postActivity}
-          className="bg-green-600 text-white px-4 rounded hover:bg-green-700"
+          className="bg-blue-600 text-white px-4 rounded hover:bg-blue-700"
         >
           Post
         </button>
       </div>
 
-      <ul className="space-y-3">
+      <ul className="space-y-3 mt-6 max-h-96 overflow-y-auto pr-2">
         {activities.map((act) => (
           <li
             key={act.id}
             className="flex items-center space-x-4 p-3 border rounded hover:bg-gray-100"
           >
-            <div className="text-green-500 font-bold">📈</div>
+            <div className="text-green-500 font-bold">
+              {act.action === "simulated_stock_update" ? "📈" : "📈"}
+            </div>
             <div>
-              <p className="text-gray-800">{act.content}</p>
+              <p className="text-gray-800">
+                {act.action === "simulated_stock_update"
+                  ? `Simulated stock update: $${act.amount}`
+                  : act.content}
+              </p>
               <p className="text-gray-400 text-xs">
                 {new Date(act.timestamp).toLocaleString()}
               </p>

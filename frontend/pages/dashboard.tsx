@@ -12,7 +12,7 @@ const DashboardPage = () => {
         {},
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`, // Include token for authentication
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
@@ -38,20 +38,15 @@ const DashboardPage = () => {
             Simulate Stock Price Change
           </button>
         </div>
-        
         <div className="flex space-x-8">
-          {/* Activity Feed */}
           <div className="w-1/2">
             <ActivityFeed />
           </div>
 
-          {/* Stock Chart */}
           <div className="w-1/2">
             <StockChart />
           </div>
         </div>
-
-        
       </div>
     </ProtectedRoute>
   );

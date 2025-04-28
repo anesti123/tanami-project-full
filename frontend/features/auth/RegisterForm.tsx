@@ -1,4 +1,3 @@
-// features/auth/RegisterForm.tsx
 import axios from 'axios';
 import router from 'next/router';
 import React, { useState } from 'react';

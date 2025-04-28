@@ -2,7 +2,7 @@
   "name": "tanami-backend",
   "version": "1.0.0",
   "scripts": {
-    "dev": "ts-node-dev src/index.ts"
+    "dev": "ts-node-dev src/server.ts"
   },
   "dependencies": {
     "@prisma/client": "^3.0.0",
